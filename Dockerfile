@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "-b", "0:5000", "app:app"]
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "-b", "0:5000", "app:create_app()"]
