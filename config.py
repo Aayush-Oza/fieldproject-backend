@@ -34,7 +34,8 @@ class Config:
     # ================================
     # CORS
     # ================================
-    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5500")
+    #FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5500")
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "https://eventops-fieldproject.netlify.app")
 
     # ================================
     # AI
