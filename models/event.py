@@ -25,6 +25,12 @@ class Event(db.Model):
     certificates         = db.relationship("Certificate", backref="event", lazy=True)
 
     def to_dict(self):
+        from datetime import datetime, timezone, timedelta
+        IST = timezone(timedelta(hours=5, minutes=30))
+        now_ist = datetime.now(IST)
+        event_end = datetime.combine(self.event_date, self.end_time).replace(tzinfo=timezone.utc)
+        is_completed = self.is_completed or (now_ist > event_end)
+
         return {
             "id":                 self.id,
             "title":              self.title,
@@ -35,7 +41,7 @@ class Event(db.Model):
             "start_time":         str(self.start_time),
             "end_time":           str(self.end_time),
             "is_published":       self.is_published,
-            "is_completed":       self.is_completed,
+            "is_completed":       is_completed,
             "created_by":         self.created_by,
             "created_at":         self.created_at.isoformat(),
             "registration_count": len([r for r in self.registrations if r.status == "registered"])
