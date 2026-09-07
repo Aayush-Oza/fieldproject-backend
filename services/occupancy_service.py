@@ -36,7 +36,9 @@ class OccupancyService:
         for event in events:
             # Skip if completed (DB flag or time-based)
             event_end = datetime.combine(event.event_date, event.end_time).replace(tzinfo=timezone.utc)
-            if event.is_completed or now_ist > event_end:
+            event_start = datetime.combine(event.event_date, event.start_time).replace(tzinfo=timezone.utc)
+            window_open = event_start - timedelta(hours=1)
+            if not (window_open <= now_ist <= event_end):
                 continue
 
             checkin_count = Checkin.query.filter_by(event_id=event.id).count()
