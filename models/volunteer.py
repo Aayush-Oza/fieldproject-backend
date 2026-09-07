@@ -14,14 +14,14 @@ class VolunteerAssignment(db.Model):
         db.UniqueConstraint("volunteer_id", "event_id", name="unique_volunteer_event"),
     )
 
-    volunteer = db.relationship("User", foreign_keys=[volunteer_id])
+    volunteer = db.relationship("User", foreign_keys=[volunteer_id], overlaps="volunteer_assignments")
 
     def to_dict(self):
         from utils.ist import to_ist
         return {
             "id":             self.id,
             "volunteer_id":   self.volunteer_id,
-            "volunteer_name": self.volunteer.full_name if self.volunteer else "Unnamed",
+            "volunteer_name": self.volunteer.name if self.volunteer else "Unnamed",
             "volunteer_email": self.volunteer.email if self.volunteer else "-",
             "event_id":       self.event_id,
             "duty":           self.duty,
