@@ -16,7 +16,7 @@ class Registration(db.Model):
         db.UniqueConstraint("user_id", "event_id", name="unique_user_event"),
     )
 
-    user = db.relationship("User", foreign_keys=[user_id])
+    user = db.relationship("User", foreign_keys=[user_id], overlaps="registrations")
 
     def to_dict(self):
         from utils.ist import to_ist
