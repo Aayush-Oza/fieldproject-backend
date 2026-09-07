@@ -32,7 +32,7 @@ def participant_required(fn):
         verify_jwt_in_request()
         claims = get_jwt()
         # Admin can access participant routes (e.g. for testing/support)
-        # Volunteers cannot — they have their own dashboard
+        # Volunteers cannot - they have their own dashboard
         if claims.get("role") not in ["participant", "admin"]:
             return jsonify({"success": False, "message": "Participant access required"}), 403
         return fn(*args, **kwargs)
