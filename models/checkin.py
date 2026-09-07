@@ -18,7 +18,7 @@ class Checkin(db.Model):
         return {
             "id":               self.id,
             "registration_id":  self.registration_id,
-            "participant_name": user.full_name if user else "Unknown",
+            "participant_name": user.name if user else "Unknown",
             "participant_email": user.email if user else "-",
             "event_id":         self.event_id,
             "volunteer_id":     self.volunteer_id,

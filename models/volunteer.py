@@ -14,7 +14,7 @@ class VolunteerAssignment(db.Model):
         db.UniqueConstraint("volunteer_id", "event_id", name="unique_volunteer_event"),
     )
 
-    volunteer = db.relationship("User", foreign_keys=[volunteer_id], overlaps="volunteer_assignments")
+    volunteer = db.relationship("User", foreign_keys=[volunteer_id], overlaps="user,volunteer_assignments")
 
     def to_dict(self):
         from utils.ist import to_ist
