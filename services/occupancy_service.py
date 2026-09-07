@@ -27,10 +27,18 @@ class OccupancyService:
 
     @staticmethod
     def get_all_live_occupancy() -> list:
-        """Return live occupancy for all published, non-completed events."""
-        events = Event.query.filter_by(is_published=True, is_completed=False).all()
+        from datetime import datetime, timezone, timedelta
+        IST = timezone(timedelta(hours=5, minutes=30))
+        now_ist = datetime.now(IST)
+
+        events = Event.query.filter_by(is_published=True).all()
         result = []
         for event in events:
+            # Skip if completed (DB flag or time-based)
+            event_end = datetime.combine(event.event_date, event.end_time).replace(tzinfo=timezone.utc)
+            if event.is_completed or now_ist > event_end:
+                continue
+
             checkin_count = Checkin.query.filter_by(event_id=event.id).count()
             fill_rate     = round((checkin_count / event.capacity) * 100, 1) if event.capacity else 0
             result.append({
