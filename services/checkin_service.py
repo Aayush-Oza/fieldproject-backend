@@ -3,7 +3,11 @@
 from models.checkin import Checkin
 from models.registration import Registration
 from models.volunteer import VolunteerAssignment
+from models.event import Event
 from extensions import db
+from datetime import datetime, timezone, timedelta
+
+IST = timezone(timedelta(hours=5, minutes=30))
 
 class CheckinService:
 
@@ -16,6 +20,21 @@ class CheckinService:
         ).first()
         if not assignment:
             return None, "You are not assigned to this event"
+
+        # Time window check
+        event = Event.query.get(event_id)
+        if not event:
+            return None, "Event not found"
+
+        now_ist     = datetime.now(IST)
+        event_start = datetime.combine(event.event_date, event.start_time).replace(tzinfo=timezone.utc).astimezone(IST)
+        event_end   = datetime.combine(event.event_date, event.end_time).replace(tzinfo=timezone.utc).astimezone(IST)
+        window_open = event_start - timedelta(hours=1)
+
+        if now_ist < window_open:
+            return None, f"Check-in opens at {window_open.strftime('%I:%M %p IST')}"
+        if now_ist > event_end:
+            return None, "Event has already ended"
 
         # Find registration by QR token
         reg = Registration.query.filter_by(
