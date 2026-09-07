@@ -10,16 +10,20 @@ class VolunteerAssignment(db.Model):
     duty         = db.Column(db.String(100), nullable=True)
     assigned_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # One volunteer per event
     __table_args__ = (
         db.UniqueConstraint("volunteer_id", "event_id", name="unique_volunteer_event"),
     )
 
+    volunteer = db.relationship("User", foreign_keys=[volunteer_id])
+
     def to_dict(self):
+        from utils.ist import to_ist
         return {
-            "id":           self.id,
-            "volunteer_id": self.volunteer_id,
-            "event_id":     self.event_id,
-            "duty":         self.duty,
-            "assigned_at":  self.assigned_at.isoformat()
+            "id":             self.id,
+            "volunteer_id":   self.volunteer_id,
+            "volunteer_name": self.volunteer.full_name if self.volunteer else "Unnamed",
+            "volunteer_email": self.volunteer.email if self.volunteer else "-",
+            "event_id":       self.event_id,
+            "duty":           self.duty,
+            "assigned_at":    to_ist(self.assigned_at)
         }

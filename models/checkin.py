@@ -10,14 +10,17 @@ class Checkin(db.Model):
     volunteer_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     checked_in_at   = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationship
     registration = db.relationship("Registration", backref="checkin")
 
     def to_dict(self):
+        from utils.ist import to_ist
+        user = self.registration.user if self.registration else None
         return {
-            "id":              self.id,
-            "registration_id": self.registration_id,
-            "event_id":        self.event_id,
-            "volunteer_id":    self.volunteer_id,
-            "checked_in_at":   self.checked_in_at.isoformat()
+            "id":               self.id,
+            "registration_id":  self.registration_id,
+            "participant_name": user.full_name if user else "Unknown",
+            "participant_email": user.email if user else "-",
+            "event_id":         self.event_id,
+            "volunteer_id":     self.volunteer_id,
+            "checked_in_at":    to_ist(self.checked_in_at)
         }
