@@ -29,7 +29,10 @@ def create_app():
 
     # Register SocketIO handlers (import triggers decorator registration)
     import sockets.occupancy  # noqa: F401
-
+    @app.route("/health")
+    def health():
+        return {"status": "ok"}, 200
+    
     # Create tables
     with app.app_context():
         db.create_all()
