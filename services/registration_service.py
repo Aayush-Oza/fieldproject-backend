@@ -22,10 +22,17 @@ class RegistrationService:
             user_id  = user_id,
             event_id = event_id
         ).first()
+        # after
         if existing:
             if existing.status == "registered":
                 return None, "Already registered for this event"
-            # Re-register if cancelled
+            # Re-register if cancelled — check capacity first
+            registered_count = Registration.query.filter_by(
+                event_id = event_id,
+                status   = "registered"
+            ).count()
+            if registered_count >= event.capacity:
+                return None, "Event is at full capacity"
             existing.status = "registered"
             db.session.commit()
             return existing, None
