@@ -1,8 +1,7 @@
-# backend/app.py
-
 from flask import Flask
 from config import Config
 from extensions import db, bcrypt, jwt, socketio, cors
+from apscheduler.schedulers.background import BackgroundScheduler
 
 from routes.auth import auth_bp
 from routes.admin import admin_bp
@@ -14,28 +13,51 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Initialize extensions
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
     cors.init_app(app, resources={r"/api/*": {"origins": Config.FRONTEND_URL}})
     socketio.init_app(app)
 
-    # Register blueprints
     app.register_blueprint(auth_bp,        url_prefix="/api/auth")
     app.register_blueprint(admin_bp,       url_prefix="/api/admin")
     app.register_blueprint(volunteer_bp,   url_prefix="/api/volunteer")
     app.register_blueprint(participant_bp, url_prefix="/api/participant")
 
-    # Register SocketIO handlers (import triggers decorator registration)
     import sockets.occupancy  # noqa: F401
+
     @app.route("/health")
     def health():
         return {"status": "ok"}, 200
-    
-    # Create tables
+
     with app.app_context():
         db.create_all()
+
+    # ── Scheduler ──────────────────────────────
+    def auto_complete_events():
+        from models.event import Event
+        from models.checkin import Checkin
+        from services.certificate_service import CertificateService
+        from datetime import datetime
+        from utils.ist import IST
+
+        with app.app_context():
+            now = datetime.now(IST)
+            events = Event.query.filter_by(is_completed=False, is_published=True).all()
+            for event in events:
+                event_end = datetime.combine(event.event_date, event.end_time).replace(tzinfo=IST)
+                if now > event_end:
+                    event.is_completed = True
+                    db.session.commit()
+                    checkins = Checkin.query.filter_by(event_id=event.id).all()
+                    for c in checkins:
+                        if c.registration:
+                            CertificateService.check_and_issue(c.registration.user_id, event.id)
+
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(auto_complete_events, 'interval', minutes=5)
+    scheduler.start()
+    # ───────────────────────────────────────────
 
     return app
 
