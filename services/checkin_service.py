@@ -1,5 +1,6 @@
 # backend/services/checkin_service.py
 
+from backend.models import event
 from models.checkin import Checkin
 from models.registration import Registration
 from models.volunteer import VolunteerAssignment
@@ -27,8 +28,8 @@ class CheckinService:
             return None, "Event not found"
 
         now_ist     = datetime.now(IST)
-        event_start = datetime.combine(event.event_date, event.start_time).replace(tzinfo=timezone.utc).astimezone(IST)
-        event_end   = datetime.combine(event.event_date, event.end_time).replace(tzinfo=timezone.utc).astimezone(IST)
+        event_start = datetime.combine(event.event_date, event.start_time).replace(tzinfo=IST)
+        event_end   = datetime.combine(event.event_date, event.end_time).replace(tzinfo=IST)
         window_open = event_start - timedelta(hours=1)
 
         if now_ist < window_open:
