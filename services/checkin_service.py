@@ -1,6 +1,5 @@
 # backend/services/checkin_service.py
 
-from backend.models import event
 from models.checkin import Checkin
 from models.registration import Registration
 from models.volunteer import VolunteerAssignment
