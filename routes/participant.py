@@ -20,7 +20,9 @@ participant_bp = Blueprint("participant", __name__)
 @participant_required
 def get_published_events():
     events = EventService.get_published_events()
-    return success(data=[e.to_dict() for e in events])
+    # Only show non-completed events to participants
+    active = [e for e in events if not e.is_completed]
+    return success(data=[e.to_dict() for e in active])
 
 
 @participant_bp.route("/events/<int:event_id>", methods=["GET"])
