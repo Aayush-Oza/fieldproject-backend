@@ -32,34 +32,7 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-
-    # ── Scheduler ──────────────────────────────
-    def auto_complete_events():
-        from models.event import Event
-        from models.checkin import Checkin
-        from services.certificate_service import CertificateService
-        from datetime import datetime
-
-        with app.app_context():
-            now = datetime.now()
-            events = Event.query.filter_by(is_completed=False, is_published=True).all()
-            for event in events:
-                event_end = datetime.combine(event.event_date, event.end_time)
-                if now > event_end:
-                    event.is_completed = True
-                    db.session.commit()
-                    checkins = Checkin.query.filter_by(event_id=event.id).all()
-                    for c in checkins:
-                        if c.registration:
-                            CertificateService.check_and_issue(c.registration.user_id, event.id)
-
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(auto_complete_events, 'interval', minutes=5)
-    scheduler.start()
-    # ───────────────────────────────────────────
-
     return app
-
 
 if __name__ == "__main__":
     app = create_app()
