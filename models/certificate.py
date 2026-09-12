@@ -10,11 +10,12 @@ class Certificate(db.Model):
     registration_id = db.Column(db.Integer, db.ForeignKey("registrations.id"), nullable=False)
     is_eligible     = db.Column(db.Boolean, default=False)
     issued_at       = db.Column(db.DateTime, nullable=True)
-    generated_at    = db.Column(db.DateTime, default=datetime.utcnow)
+    generated_at    = db.Column(db.DateTime, default=datetime.now)
 
     # Relationships
     user         = db.relationship("User", backref="certificates")
     registration = db.relationship("Registration", backref="certificate")
+    event = db.relationship("Event", backref="certificates")
 
     def to_dict(self):
         return {

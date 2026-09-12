@@ -3,6 +3,8 @@
 from models.registration import Registration
 from models.event import Event
 from extensions import db
+from services.qr_service import QRService
+
 
 class RegistrationService:
 
@@ -14,7 +16,7 @@ class RegistrationService:
             return None, "Event not found"
         if not event.is_published:
             return None, "Event is not open for registration"
-        if event.is_completed:
+        if event.effective_is_completed:
             return None, "Event is already completed"
 
         # Check duplicate
@@ -24,18 +26,7 @@ class RegistrationService:
         ).first()
         # after
         if existing:
-            if existing.status == "registered":
-                return None, "Already registered for this event"
-            # Re-register if cancelled — check capacity first
-            registered_count = Registration.query.filter_by(
-                event_id = event_id,
-                status   = "registered"
-            ).count()
-            if registered_count >= event.capacity:
-                return None, "Event is at full capacity"
-            existing.status = "registered"
-            db.session.commit()
-            return existing, None
+            return None, "Already registered for this event"
 
         # Check capacity
         registered_count = Registration.query.filter_by(
@@ -52,6 +43,10 @@ class RegistrationService:
         )
         db.session.add(reg)
         db.session.commit()
+        s3_key, err = QRService.generate_and_upload(reg)
+        if not err:
+            reg.qr_s3_key = s3_key
+        db.session.commit()
         return reg, None
 
     @staticmethod
@@ -63,18 +58,11 @@ class RegistrationService:
     @staticmethod
     def get_registration_by_token(qr_token):
         return Registration.query.filter_by(qr_token=qr_token).first()
-
+    
     @staticmethod
-    def cancel_registration(user_id, event_id):
-        reg = Registration.query.filter_by(
+    def get_registration(user_id, event_id):
+        return Registration.query.filter_by(
             user_id  = user_id,
-            event_id = event_id
+            event_id = event_id,
+            status   = "registered"
         ).first()
-        if not reg:
-            return None, "Registration not found"
-        if reg.status == "cancelled":
-            return None, "Already cancelled"
-
-        reg.status = "cancelled"
-        db.session.commit()
-        return reg, None

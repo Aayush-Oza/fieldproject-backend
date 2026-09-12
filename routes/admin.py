@@ -14,9 +14,9 @@ from extensions import db
 admin_bp = Blueprint("admin", __name__)
 
 
-# ================================
+# ════════════════════════════════════════════════
 # EVENT MANAGEMENT
-# ================================
+# ════════════════════════════════════════════════
 
 @admin_bp.route("/events", methods=["GET"])
 @admin_required
@@ -28,8 +28,8 @@ def get_all_events():
 @admin_bp.route("/events", methods=["POST"])
 @admin_required
 def create_event():
-    data     = request.get_json()
-    admin    = get_current_user()
+    data  = request.get_json()
+    admin = get_current_user()
 
     if not data:
         return error("No data provided")
@@ -59,6 +59,27 @@ def get_event(event_id):
     return success(data=event.to_dict())
 
 
+@admin_bp.route("/events/<int:event_id>/edit-info", methods=["GET"])
+@admin_required
+def get_edit_info(event_id):
+    """
+    Returns whether admin can edit this event and which fields are allowed.
+    Frontend uses this to disable/enable form fields before showing edit form.
+    """
+    event = EventService.get_event_by_id(event_id)
+    if not event:
+        return error("Event not found", 404)
+
+    can_edit, allowed_fields, reason = EventService.get_edit_permission(event)
+    return success(data={
+        "can_edit":       can_edit,
+        "allowed_fields": allowed_fields,
+        "reason":         reason,
+        "hours_until":    round(event.hours_until_event, 2),
+        "is_completed":   event.effective_is_completed,
+    })
+
+
 @admin_bp.route("/events/<int:event_id>", methods=["PUT"])
 @admin_required
 def update_event(event_id):
@@ -68,7 +89,7 @@ def update_event(event_id):
 
     event, err = EventService.update_event(event_id, data)
     if err:
-        return error(err, 404)
+        return error(err)  # 400 by default — could be permission or not found
 
     return success(
         message = "Event updated successfully",
@@ -101,33 +122,26 @@ def toggle_publish(event_id):
     if not event:
         return error("Event not found", 404)
 
+    # Cannot publish a completed event
+    if not event.is_published and event.effective_is_completed:
+        return error("Cannot publish a completed event")
+
     event, err = EventService.update_event(
         event_id,
         {"is_published": not event.is_published}
     )
+    if err:
+        return error(err)
+
     return success(
         message = f"Event {'published' if event.is_published else 'unpublished'}",
         data    = event.to_dict()
     )
 
 
-@admin_bp.route("/events/<int:event_id>/complete", methods=["PUT"])
-@admin_required
-def mark_complete(event_id):
-    event, err = EventService.update_event(
-        event_id,
-        {"is_completed": True}
-    )
-    if err:
-        return error(err, 404)
-    return success(
-        message = "Event marked as completed",
-        data    = event.to_dict()
-    )
-    
-# ================================
+# ════════════════════════════════════════════════
 # VOLUNTEER MANAGEMENT
-# ================================
+# ════════════════════════════════════════════════
 
 @admin_bp.route("/events/<int:event_id>/volunteers", methods=["GET"])
 @admin_required
@@ -150,6 +164,7 @@ def assign_volunteer(event_id):
     )
     if err:
         return error(err)
+
     return success(
         message = "Volunteer assigned successfully",
         data    = assignment.to_dict(),
@@ -165,9 +180,10 @@ def remove_volunteer(event_id, volunteer_id):
         return error(err, 404)
     return success(message="Volunteer removed successfully")
 
-# ================================
+
+# ════════════════════════════════════════════════
 # USER MANAGEMENT
-# ================================
+# ════════════════════════════════════════════════
 
 @admin_bp.route("/users", methods=["GET"])
 @admin_required
@@ -210,14 +226,15 @@ def make_participant(user_id):
         message = "User changed to participant",
         data    = user.to_dict()
     )
-    
-# ================================
+
+
+# ════════════════════════════════════════════════
 # FORECAST ROUTES
-# ================================
+# ════════════════════════════════════════════════
+
 @admin_bp.route("/forecast/status", methods=["GET"])
 @admin_required
 def forecast_status():
-    """Check if AI model is loaded and ready."""
     status = get_model_status()
     return success(data=status)
 
@@ -225,7 +242,6 @@ def forecast_status():
 @admin_bp.route("/forecast/events/<int:event_id>", methods=["GET"])
 @admin_required
 def forecast_event(event_id):
-    """Predict attendance for a saved event."""
     from models.event import Event
     event = Event.query.get(event_id)
     if not event:
@@ -241,10 +257,6 @@ def forecast_event(event_id):
 @admin_bp.route("/forecast/preview", methods=["POST"])
 @admin_required
 def forecast_preview():
-    """
-    Predict attendance before saving an event.
-    Body: { capacity, venue, event_date, start_time, end_time, registered_count }
-    """
     data = request.get_json()
     required = ["capacity", "event_date", "start_time", "end_time"]
     for field in required:
@@ -260,14 +272,13 @@ def forecast_preview():
         return error(str(e))
 
 
-# ================================
-# OCCUPANCY ROUTES (REST fallback)
-# ================================
+# ════════════════════════════════════════════════
+# OCCUPANCY ROUTES
+# ════════════════════════════════════════════════
 
 @admin_bp.route("/occupancy", methods=["GET"])
 @admin_required
 def get_all_occupancy():
-    """Live occupancy for all active events (REST fallback if no socket)."""
     data = OccupancyService.get_all_live_occupancy()
     return success(data=data)
 
@@ -275,11 +286,15 @@ def get_all_occupancy():
 @admin_bp.route("/occupancy/<int:event_id>", methods=["GET"])
 @admin_required
 def get_event_occupancy(event_id):
-    """Live occupancy for a single event."""
     data = OccupancyService.get_live_occupancy(event_id)
     if not data:
         return error("Event not found", 404)
     return success(data=data)
+
+
+# ════════════════════════════════════════════════
+# CERTIFICATES
+# ════════════════════════════════════════════════
 
 @admin_bp.route("/certificates/count", methods=["GET"])
 @admin_required

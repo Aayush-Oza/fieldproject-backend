@@ -8,7 +8,7 @@ class VolunteerAssignment(db.Model):
     volunteer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     event_id     = db.Column(db.Integer, db.ForeignKey("events.id"), nullable=False)
     duty         = db.Column(db.String(100), nullable=True)
-    assigned_at  = db.Column(db.DateTime, default=datetime.utcnow)
+    assigned_at  = db.Column(db.DateTime, default=datetime.now)
 
     __table_args__ = (
         db.UniqueConstraint("volunteer_id", "event_id", name="unique_volunteer_event"),
@@ -17,7 +17,6 @@ class VolunteerAssignment(db.Model):
     volunteer = db.relationship("User", foreign_keys=[volunteer_id], overlaps="user,volunteer_assignments")
 
     def to_dict(self):
-        from utils.ist import to_ist
         return {
             "id":             self.id,
             "volunteer_id":   self.volunteer_id,
@@ -25,5 +24,5 @@ class VolunteerAssignment(db.Model):
             "volunteer_email": self.volunteer.email if self.volunteer else "-",
             "event_id":       self.event_id,
             "duty":           self.duty,
-            "assigned_at":    to_ist(self.assigned_at)
+            "assigned_at": self.assigned_at.isoformat()
         }

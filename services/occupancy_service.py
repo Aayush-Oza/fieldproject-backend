@@ -27,18 +27,18 @@ class OccupancyService:
 
     @staticmethod
     def get_all_live_occupancy() -> list:
-        from datetime import datetime, timezone, timedelta
-        IST = timezone(timedelta(hours=5, minutes=30))
-        now_ist = datetime.now(IST)
+        
 
         events = Event.query.filter_by(is_published=True).all()
         result = []
         for event in events:
             # Skip if completed (DB flag or time-based)
-            event_end = datetime.combine(event.event_date, event.end_time).replace(tzinfo=timezone.utc)
-            event_start = datetime.combine(event.event_date, event.start_time).replace(tzinfo=timezone.utc)
+            from datetime import datetime, timedelta
+            now         = datetime.now()
+            event_end   = datetime.combine(event.event_date, event.end_time)
+            event_start = datetime.combine(event.event_date, event.start_time)
             window_open = event_start - timedelta(hours=1)
-            if not (window_open <= now_ist <= event_end):
+            if not (window_open <= now <= event_end):
                 continue
 
             checkin_count = Checkin.query.filter_by(event_id=event.id).count()

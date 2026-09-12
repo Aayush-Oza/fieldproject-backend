@@ -10,7 +10,7 @@ class User(db.Model):
     phone      = db.Column(db.String(15), nullable=True)
     password   = db.Column(db.String(255), nullable=False)
     role = db.Column(db.Enum("admin", "volunteer", "participant", name="user_role"), nullable=False, default="participant")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
     is_active  = db.Column(db.Boolean, default=True)
 
     # Relationships

@@ -39,13 +39,12 @@ def create_app():
         from models.checkin import Checkin
         from services.certificate_service import CertificateService
         from datetime import datetime
-        from utils.ist import IST
 
         with app.app_context():
-            now = datetime.now(IST)
+            now = datetime.now()
             events = Event.query.filter_by(is_completed=False, is_published=True).all()
             for event in events:
-                event_end = datetime.combine(event.event_date, event.end_time).replace(tzinfo=IST)
+                event_end = datetime.combine(event.event_date, event.end_time)
                 if now > event_end:
                     event.is_completed = True
                     db.session.commit()
