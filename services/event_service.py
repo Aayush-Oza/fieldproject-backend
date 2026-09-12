@@ -42,9 +42,9 @@ class EventService:
                 # Identity
                 event_type     = data.get("event_type",     None),
                 mode           = data.get("mode",           None),
-                organizer_dept = data.get("organizer_dept", "").strip() or None,
-                speaker_name   = data.get("speaker_name",   "").strip() or None,
-                tags           = data.get("tags",           "").strip() or None,
+                organizer_dept = (data.get("organizer_dept") or "").strip() or None,
+                speaker_name   = (data.get("speaker_name")   or "").strip() or None,
+                tags           = (data.get("tags")           or "").strip() or None,
 
                 # Media
                 banner_url = data.get("banner_url", None),
@@ -56,11 +56,11 @@ class EventService:
                 entry_fee             = float(data["entry_fee"]) if data.get("entry_fee") else None,
 
                 # Private
-                whatsapp_link  = data.get("whatsapp_link",  "").strip() or None,
-                meet_link      = data.get("meet_link",      "").strip() or None,
-                contact_name   = data.get("contact_name",   "").strip() or None,
-                contact_phone  = data.get("contact_phone",  "").strip() or None,
-                venue_map_link = data.get("venue_map_link", "").strip() or None,
+                whatsapp_link  = (data.get("whatsapp_link")  or "").strip() or None,
+                meet_link      = (data.get("meet_link")      or "").strip() or None,
+                contact_name   = (data.get("contact_name")   or "").strip() or None,
+                contact_phone  = (data.get("contact_phone")  or "").strip() or None,
+                venue_map_link = (data.get("venue_map_link") or "").strip() or None,
             )
 
             db.session.add(event)
