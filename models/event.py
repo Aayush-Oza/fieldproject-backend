@@ -47,7 +47,7 @@ class Event(db.Model):
     registrations        = db.relationship("Registration", backref="event", lazy=True)
     checkins             = db.relationship("Checkin",      backref="event", lazy=True)
     volunteer_assignment = db.relationship("VolunteerAssignment", backref="event", lazy=True)
-    certificates = db.relationship("Certificate", backref="cert_event", lazy=True)
+    certificates = db.relationship("Certificate", lazy=True)
 
     # ──────────────────────────────────────────────────
     # Completion check (no timezone math — server is IST)
