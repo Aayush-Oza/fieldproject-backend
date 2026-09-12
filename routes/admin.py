@@ -302,3 +302,54 @@ def get_certificate_count():
     from models.certificate import Certificate
     count = Certificate.query.filter_by(is_eligible=True).count()
     return success(data={"count": count})
+
+#
+#banner upload route for admin
+#
+
+@admin_bp.route("/upload/banner", methods=["POST"])
+@admin_required
+def upload_banner():
+    """
+    Accept image file → upload to S3 under banners/ → return S3 URL.
+    Frontend calls this before creating event, gets URL, sends in create body.
+    """
+    from flask import request
+    import boto3, os, uuid
+    from botocore.exceptions import ClientError
+
+    if 'file' not in request.files:
+        return error("No file provided")
+
+    file = request.files['file']
+    if not file.filename:
+        return error("Empty filename")
+
+    # Only allow images
+    allowed = {'png', 'jpg', 'jpeg', 'webp', 'gif'}
+    ext = file.filename.rsplit('.', 1)[-1].lower()
+    if ext not in allowed:
+        return error("Only image files allowed (png, jpg, jpeg, webp, gif)")
+
+    bucket = os.getenv("S3_BUCKET_NAME")
+    region = os.getenv("AWS_REGION", "ap-south-1")
+    s3_key = f"banners/{uuid.uuid4().hex}.{ext}"
+
+    try:
+        client = boto3.client(
+            "s3",
+            region_name=region,
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        )
+        client.upload_fileobj(
+            file,
+            bucket,
+            s3_key,
+            ExtraArgs={"ContentType": file.content_type}
+        )
+        url = f"https://{bucket}.s3.{region}.amazonaws.com/{s3_key}"
+        return success(data={"url": url, "key": s3_key})
+
+    except ClientError as e:
+        return error(f"S3 upload failed: {str(e)}", 500)

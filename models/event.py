@@ -54,8 +54,10 @@ class Event(db.Model):
     # ──────────────────────────────────────────────────
     @property
     def is_over(self):
-        """True if event end datetime has passed. Pure IST — no UTC conversion."""
+        from datetime import timedelta
         event_end = datetime.combine(self.event_date, self.end_time)
+        if self.end_time < self.start_time:
+            event_end += timedelta(days=1)
         return datetime.now() > event_end
 
     @property
