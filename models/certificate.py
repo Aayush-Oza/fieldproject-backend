@@ -15,7 +15,7 @@ class Certificate(db.Model):
     # Relationships
     user         = db.relationship("User", backref="certificates")
     registration = db.relationship("Registration", backref="certificate")
-    event = db.relationship("Event", backref="certificates")
+    event = db.relationship("Event", back_populates="certificates")
 
     def to_dict(self):
         return {
